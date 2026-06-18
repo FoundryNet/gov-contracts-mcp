@@ -1,0 +1,17 @@
+{
+  "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
+  "name": "io.github.FoundryNet/gov-contracts-mcp",
+  "title": "Government Contracts MCP",
+  "description": "Government contract search and federal procurement data: SAM.gov opportunities + USASpending awards.",
+  "version": "1.0.0",
+  "repository": {
+    "url": "https://github.com/FoundryNet/gov-contracts-mcp",
+    "source": "github"
+  },
+  "remotes": [
+    {
+      "type": "streamable-http",
+      "url": "https://gov-contracts-mcp-production.up.railway.app/mcp"
+    }
+  ]
+}

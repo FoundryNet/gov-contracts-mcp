@@ -1,0 +1,19 @@
+name: "@foundrynet/gov-contracts"
+displayName: "Government Contracts MCP"
+description: >-
+  Government contract search and federal procurement data for AI agents. Four
+  tools: search SAM.gov opportunities and USASpending/FPDS contract awards from
+  one aggregated dataset, fetch full contract detail, summarize government
+  spending data by agency and NAICS sector, and surface trending solicitation
+  sectors. Free tier, then 1¢ USDC per query via x402.
+startCommand:
+  type: http
+  url: "https://gov-contracts-mcp-production.up.railway.app/mcp"
+  transport: streamable-http
+  configSchema:
+    type: object
+    properties:
+      api_key:
+        type: string
+        title: "Forge billing key (optional)"
+        description: "fnet_ key to bypass the per-query x402 paywall and bill to a Forge account."

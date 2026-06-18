@@ -1,0 +1,20 @@
+{
+  "name": "Government Contracts MCP",
+  "description": "Government contract search and federal procurement data for agents. Search SAM.gov opportunities and USASpending/FPDS awards, look up contract detail, and analyze government spending by agency and sector.",
+  "url": "https://github.com/FoundryNet/gov-contracts-mcp",
+  "capabilities": [
+    "government_contract_search",
+    "federal_procurement_data",
+    "sam_gov_opportunities",
+    "government_spending_data"
+  ],
+  "protocols": {
+    "mcp": {
+      "endpoint": "https://gov-contracts-mcp-production.up.railway.app/mcp",
+      "transport": "streamable-http",
+      "tools_count": 4
+    },
+    "x402": { "supported": true, "currency": "USDC", "network": "solana" }
+  },
+  "contact": "hello@foundrynet.io"
+}
