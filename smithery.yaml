@@ -1,11 +1,36 @@
-name: "@foundrynet/gov-contracts"
-displayName: "Government Contracts MCP"
+name: "@foundrynet/gov-contracts-mcp"
+displayName: "FoundryNet Government Intelligence"
 description: >-
-  Government contract search and federal procurement data for AI agents. Four
-  tools: search SAM.gov opportunities and USASpending/FPDS contract awards from
-  one aggregated dataset, fetch full contract detail, summarize government
-  spending data by agency and NAICS sector, and surface trending solicitation
-  sectors. Free tier, then 1¢ USDC per query via x402.
+  Search federal government contracts, solicitations, and awards. Real-time SAM.gov and USASpending data with trending sector analysis.
+icon: "🏛️"
+homepage: "https://foundrynet.io"
+repository: "https://github.com/FoundryNet/gov-contracts-mcp"
+license: "MIT"
+categories:
+  - government
+  - data
+  - research
+tags:
+  - government-contracts
+  - federal-procurement
+  - sam-gov
+  - usaspending
+  - naics
+  - solicitations
+keywords:
+  - government-contracts
+  - federal-procurement
+  - sam-gov
+  - usaspending
+  - naics
+  - solicitations
+attestation:
+  protocol: "MINT Protocol"
+  verified_outputs: true
+  live_feed: "https://mint.foundrynet.io/feed"
+network:
+  name: "FoundryNet Data Network"
+  servers: 17
 startCommand:
   type: http
   url: "https://gov-contracts-mcp-production.up.railway.app/mcp"
