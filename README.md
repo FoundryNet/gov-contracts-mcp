@@ -8,6 +8,18 @@ detail, agency spending breakdowns, and trending solicitation sectors.
 Live MCP endpoint (Streamable HTTP):
 `https://gov-contracts-mcp-production.up.railway.app/mcp`
 
+## Connect
+
+- **MCP endpoint:** `https://gov-contracts-mcp-production.up.railway.app/mcp`
+- **Registry id:** `io.github.FoundryNet/gov-contracts-mcp`
+- **Agent card:** `https://gov-contracts-mcp-production.up.railway.app/.well-known/agent-card.json`
+
+### Claude Desktop / Cursor / Claude Code
+
+```bash
+claude mcp add --transport http gov-contracts https://gov-contracts-mcp-production.up.railway.app/mcp
+```
+
 ## Tools
 
 | Tool | Price | What it does |
@@ -16,6 +28,8 @@ Live MCP endpoint (Streamable HTTP):
 | `contract_detail` | **free** | Full record for one solicitation number |
 | `agency_spending` | $0.01 | Live spend-by-NAICS + top awardees for an agency / fiscal year |
 | `trending_opportunities` | $0.01 | Sectors ranked by new-solicitation volume over a window |
+| `daily_brief` | $10 | Curated daily federal-procurement brief (MINT-attested) |
+| `mint_info` | **free** | FoundryNet Data Network + MINT Protocol cross-promo |
 
 **Free tier:** 25 paid-tool queries/day per agent (plus unlimited free
 `contract_detail`). Pass `agent_id` to scope your allowance. After that, each query
@@ -34,7 +48,7 @@ USASpending live so it always reflects the full federal record.
 
 ## Connect
 
-Smithery: `@foundrynet/gov-contracts` · MCP registry:
+MCP registry:
 `io.github.FoundryNet/gov-contracts-mcp`
 
 ```json
@@ -58,3 +72,8 @@ python server.py        # serves /mcp + /sse on :8080, /health for liveness
 Apply `sql/0001_gov_contracts.sql` to the Supabase project before first run.
 
 Built by [FoundryNet](https://foundrynet.io) · hello@foundrynet.io
+
+## Live network activity
+
+**Live feed:** [mint.foundrynet.io/feed](https://mint.foundrynet.io/feed)  
+Real-time verified work across 13 servers and autonomous agents, anchored on Solana via [MINT Protocol](https://mint.foundrynet.io).

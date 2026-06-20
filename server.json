@@ -1,13 +1,37 @@
 {
   "$schema": "https://static.modelcontextprotocol.io/schemas/2025-12-11/server.schema.json",
   "name": "io.github.FoundryNet/gov-contracts-mcp",
-  "title": "Government Contracts MCP",
-  "description": "Government contract search and federal procurement data: SAM.gov opportunities + USASpending awards.",
+  "title": "Government Contracts Intelligence MCP",
+  "description": "Search U.S. federal government contracts, solicitations, and awards by agency, value, NAICS code, or keyword — live from SAM.gov and USASpending, with response deadlines.",
   "version": "1.0.0",
+  "homepage": "https://foundrynet.io",
+  "website": "https://foundrynet.io",
   "repository": {
     "url": "https://github.com/FoundryNet/gov-contracts-mcp",
     "source": "github"
   },
+  "keywords": [
+    "government contracts",
+    "federal procurement",
+    "SAM.gov",
+    "solicitations",
+    "NAICS",
+    "government spending"
+  ],
+  "tags": [
+    "government contracts",
+    "federal procurement",
+    "SAM.gov",
+    "solicitations",
+    "NAICS",
+    "government spending"
+  ],
+  "categories": [
+    "government",
+    "procurement",
+    "data",
+    "business-intelligence"
+  ],
   "remotes": [
     {
       "type": "streamable-http",

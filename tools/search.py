@@ -19,9 +19,13 @@ def register(mcp) -> None:
         agent_id: Optional[str] = None,
         payment_tx: Optional[str] = None,
     ) -> dict:
-        """Search U.S. federal government contracts — both open opportunities /
-        solicitations (SAM.gov) and awarded contracts (USASpending/FPDS) — from one
-        aggregated, deduplicated dataset. Results are sorted newest-first.
+        """Search U.S. federal government contracts, solicitations, and awards by
+        agency, value, NAICS code, keyword, state, or status — live from SAM.gov
+        opportunities and USASpending/FPDS awards, newest-first.
+
+        Covers federal procurement and government spending across one aggregated,
+        deduplicated dataset of open SAM.gov solicitations and USASpending contract
+        awards.
 
         PAID: $0.01 USDC per query after a daily free allowance. The first calls
         each day are free; once spent, the tool returns an HTTP-402 body with

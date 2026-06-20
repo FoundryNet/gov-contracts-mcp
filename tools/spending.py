@@ -12,10 +12,10 @@ def register(mcp) -> None:
         agent_id: Optional[str] = None,
         payment_tx: Optional[str] = None,
     ) -> dict:
-        """Spending summary for a federal agency: contract dollars broken down by
-        NAICS sector and the top awardees, computed live from USASpending.gov for
-        the requested fiscal year (the full federal record, not just the local
-        table).
+        """Analyze U.S. federal government spending for an agency — contract dollars
+        broken down by NAICS sector and the top awardees, computed live from
+        USASpending.gov for the requested fiscal year (the full federal procurement
+        record, not just the local table).
 
         PAID: $0.01 USDC per query after the daily free allowance. On a 402, pay
         the returned Solana memo and re-call with the SAME arguments plus

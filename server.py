@@ -28,6 +28,7 @@ from starlette.responses import JSONResponse
 
 import config
 import core
+import daily_curator
 import identity
 import payment_gate
 import supa
@@ -64,7 +65,8 @@ async def health(request: Request) -> JSONResponse:
         "service":           "gov-contracts-mcp",
         "transport":         "streamable-http",
         "tools":             ["search_contracts", "contract_detail",
-                              "agency_spending", "trending_opportunities"],
+                              "agency_spending", "trending_opportunities",
+                              "daily_brief", "mint_info"],
         "dataset":           "supabase:gov_contracts" if supa.configured() else "unconfigured",
         "x402_enabled":      config.X402_ENABLED,
         "query_payment":     "armed" if payment_gate.is_active() else "free",
@@ -149,32 +151,29 @@ async def rest_trending(request: Request) -> JSONResponse:
 
 # ── Discovery ────────────────────────────────────────────────────────────────
 _AGENT_CARD = {
-    "name": "Government Contracts MCP",
+    "name": "Government Contracts Intelligence MCP",
     "description": (
-        "Government contract search and federal procurement data for agents. "
-        "Search SAM.gov opportunities and USASpending/FPDS awards, look up "
-        "contract detail, and analyze government spending by agency and sector."
+        "Search U.S. federal government contracts, solicitations, and awards by "
+        "agency, value, NAICS code, or keyword — live from SAM.gov and USASpending, "
+        "with response deadlines."
     ),
-    "url": "https://github.com/FoundryNet/gov-contracts-mcp",
-    "capabilities": [
-        "government_contract_search", "federal_procurement_data",
-        "sam_gov_opportunities", "government_spending_data",
-    ],
-    "tools": [
-        {"name": "search_contracts",
-         "description": "Search federal opportunities + awards", "pricing": "0.01 USDC"},
-        {"name": "contract_detail",
-         "description": "Full record for one solicitation", "pricing": "free"},
-        {"name": "agency_spending",
-         "description": "Agency spend by NAICS + top awardees", "pricing": "0.01 USDC"},
-        {"name": "trending_opportunities",
-         "description": "Sectors by new-solicitation volume", "pricing": "0.01 USDC"},
-    ],
-    "protocols": {
-        "mcp": {"endpoint": config.PUBLIC_MCP_URL, "transport": "streamable-http",
-                "tools_count": 4},
-        "x402": {"supported": True, "currency": "USDC", "network": "solana"},
+    "url": "https://gov-contracts-mcp-production.up.railway.app/mcp",
+    "version": "1.0.0",
+    "capabilities": {
+        "tools": [
+            "search_contracts", "contract_detail", "agency_spending",
+            "trending_opportunities", "daily_brief", "mint_info",
+        ],
     },
+    "provider": {"name": "FoundryNet", "url": "https://foundrynet.io"},
+    "network": "FoundryNet Data Network",
+    "attestation": {
+        "protocol": "MINT Protocol",
+        "endpoint": "https://mint-mcp-production.up.railway.app/mcp",
+        "verified_outputs": True, "live_feed": "https://mint.foundrynet.io/feed", "feed_api": "https://mint-mcp-production.up.railway.app/v1/feed",
+    },
+    "see_also": config.SISTER_SERVERS,
+    "x402": {"supported": True, "currency": "USDC", "network": "solana"},
     "contact": "hello@foundrynet.io",
 }
 
@@ -242,9 +241,35 @@ async def server_card(request: Request) -> JSONResponse:
 
 
 # ── Entrypoint ───────────────────────────────────────────────────────────────
+_FREE_TOOL_NAMES = {"mint_info", "macro_dashboard", "cve_detail", "detail",
+                    "domain_age", "convert", "rates", "market_overview", "price",
+                    "quote", "batch_quote", "sector_performance"}
+
+
+@mcp.custom_route("/.well-known/mcp.json", methods=["GET"])
+async def wellknown_mcp_json(request: Request) -> JSONResponse:
+    """Machine-discovery card (emerging standard) for AI clients/crawlers."""
+    live = await _live_tools()
+    names = [t["name"] for t in live]
+    return JSONResponse({
+        "name": _AGENT_CARD["name"],
+        "description": _AGENT_CARD["description"],
+        "url": config.PUBLIC_MCP_URL,
+        "transport": ["streamable-http"],
+        "tools": names,
+        "pricing": {"model": "per-query", "free_tier": True,
+                    "paid_tools": [n for n in names if n not in _FREE_TOOL_NAMES]},
+        "attestation": {"enabled": True, "protocol": "MINT Protocol",
+                        "feed": "https://mint.foundrynet.io/feed"},
+        "network": {"name": "FoundryNet Data Network", "servers": 17,
+                    "homepage": "https://foundrynet.io"},
+    }, headers={"Cache-Control": "public, max-age=300"})
+
+
 def build_dual_app():
     """Serve Streamable HTTP at /mcp (primary, + all custom routes) and graft the
     legacy SSE transport routes (/sse, /messages) on so old configs keep working."""
+    import asyncio
     import contextlib
     main_app = mcp.http_app(transport="http", path="/mcp")
     sse_app = mcp.http_app(transport="sse", path="/sse")
@@ -257,7 +282,13 @@ def build_dual_app():
     async def _dual_lifespan(app):
         async with main_life(app):
             async with sse_life(app):
-                yield
+                brief_task = asyncio.create_task(daily_curator.curator_loop())
+                try:
+                    yield
+                finally:
+                    brief_task.cancel()
+                    with contextlib.suppress(Exception):
+                        await brief_task
     main_app.router.lifespan_context = _dual_lifespan
     return main_app
 

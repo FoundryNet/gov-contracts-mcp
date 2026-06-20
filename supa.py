@@ -56,6 +56,34 @@ async def _rpc(fn: str, body: dict):
     return r
 
 
+# ── generic helpers (used by daily_curator) ───────────────────────────────────
+
+async def select(table: str, params: dict) -> list:
+    """Plain PostgREST GET; returns [] on anything but a list."""
+    return await _select(table, params)
+
+
+async def rpc(fn: str, body: dict):
+    """Plain PostgREST RPC passthrough."""
+    return await _rpc(fn, body)
+
+
+async def upsert(table: str, rows: list, on_conflict: str) -> dict:
+    """Upsert rows on a conflict target. Returns {data:[...]} or {error:...}."""
+    if not configured():
+        return {"error": "not_configured"}
+    r = await request_json(
+        "POST", _url(table),
+        headers=_headers({"Prefer": "resolution=merge-duplicates,return=representation"}),
+        params={"on_conflict": on_conflict},
+        body=rows, timeout=config.REQUEST_TIMEOUT)
+    if isinstance(r, list):
+        return {"data": r}
+    if isinstance(r, dict) and "error" not in r:
+        return {"data": [r]}
+    return r if isinstance(r, dict) else {"error": "bad_response", "detail": str(r)}
+
+
 # ── gov_contracts reads ───────────────────────────────────────────────────────
 
 # Columns returned to callers (the full row shape).

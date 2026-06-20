@@ -55,6 +55,15 @@ REQUEST_TIMEOUT = int(_env("REQUEST_TIMEOUT", "30"))
 X402_ENABLED      = _flag("X402_ENABLED", True)
 SOLANA_WALLET     = _env("SOLANA_WALLET", "wUumjWWvtFEr69qkTw3wHNVQVxLA8DTyJSyVgGmLThd")
 QUERY_PRICE_USDC  = float(_env("QUERY_PRICE_USDC", "0.01"))
+# Per-tool pricing. The gate charges TOOL_PRICES[tool] (USDC), falling back to
+# QUERY_PRICE_USDC for any tool not listed. 0 = free (gate stays open for it).
+TOOL_PRICES = {
+    "daily_brief":            float(_env("PRICE_DAILY_BRIEF", "10")),
+    "search_contracts":       float(_env("PRICE_SEARCH_CONTRACTS", "0.01")),
+    "agency_spending":        float(_env("PRICE_AGENCY_SPENDING", "0.01")),
+    "trending_opportunities": float(_env("PRICE_TRENDING_OPPORTUNITIES", "0.01")),
+    "contract_detail":        float(_env("PRICE_CONTRACT_DETAIL", "0")),  # free
+}
 PAYMENT_RECIPIENT = _env("PAYMENT_RECIPIENT", SOLANA_WALLET).strip()
 PAYMENT_VERIFY_RPC = _env("PAYMENT_VERIFY_RPC", "https://api.mainnet-beta.solana.com").rstrip("/")
 # USDC on Solana mainnet (6 decimals). Override only for a different stable/network.
@@ -64,9 +73,47 @@ PAYMENT_EXPIRY_SECONDS = int(_env("PAYMENT_EXPIRY_SECONDS", "300"))
 # Free tier: this many paid-tool queries/day per agent before the paywall.
 FREE_TIER_DAILY = int(_env("FREE_TIER_DAILY", "25"))
 
+# ── Daily curated brief (daily_brief tool + daily_curator background task) ────
+PRICE_DAILY_BRIEF = float(_env("PRICE_DAILY_BRIEF", "10"))   # premium curated brief
+BRIEF_HOUR_UTC    = int(_env("BRIEF_HOUR_UTC", "5"))         # curator runs at 05:00 UTC
+SERVER_SLUG       = "gov-contracts"
+# Cross-network brief catalog (server -> price + tool) for related_briefs.
+NETWORK_BRIEFS = {
+    "financial-signals": "$25", "cyber-intel": "$15", "patent-intel": "$10",
+    "gov-contracts": "$10", "compliance": "$10", "brand-intel": "$5", "weather-intel": "$5",
+}
+
+# ── MINT Protocol (data-provenance attestation + mint_info cross-promo) ──────
+MINT_MCP_URL  = _env("MINT_MCP_URL", "https://mint-mcp-production.up.railway.app/mcp")
+MINT_INFO_URL = _env("MINT_INFO_URL", "https://mint.foundrynet.io")
+
 # Live source for agency_spending (no key needed).
 USASPENDING_API = _env("USASPENDING_API", "https://api.usaspending.gov").rstrip("/")
 
 # Public endpoint advertised in discovery payloads. Railway maps the service
 # domain here once known.
 PUBLIC_MCP_URL = _env("PUBLIC_MCP_URL", "https://gov-contracts-mcp-production.up.railway.app/mcp")
+
+# ── FoundryNet Data Network — full sister-server map (auto-updated 2026-06-19) ──
+# Re-binds SISTER_SERVERS to the complete network (all 11 servers, self excluded),
+# now including fact-check-mcp, oss-intel-mcp, social-intel-mcp.
+_FNET_ALL_SERVERS = {
+    "mint-mcp":              "https://mint-mcp-production.up.railway.app/mcp",
+    "foundrynet-mcp":        "https://foundrynet-mcp-production.up.railway.app/mcp",
+    "gov-contracts-mcp":     "https://gov-contracts-mcp-production.up.railway.app/mcp",
+    "brand-intel-mcp":       "https://brand-intel-mcp-production.up.railway.app/mcp",
+    "patent-intel-mcp":      "https://patent-intel-mcp-production.up.railway.app/mcp",
+    "financial-signals-mcp": "https://financial-signals-mcp-production.up.railway.app/mcp",
+    "weather-intel-mcp":     "https://weather-intel-mcp-production.up.railway.app/mcp",
+    "cyber-intel-mcp":       "https://cyber-intel-mcp-production.up.railway.app/mcp",
+    "compliance-mcp":        "https://compliance-mcp-production.up.railway.app/mcp",
+    "academic-intel-mcp":    "https://academic-intel-mcp-production.up.railway.app/mcp",
+    "fact-check-mcp":        "https://fact-check-mcp-production.up.railway.app/mcp",
+    "oss-intel-mcp":         "https://oss-intel-mcp-production.up.railway.app/mcp",
+    "social-intel-mcp":      "https://social-intel-mcp-production.up.railway.app/mcp",
+    "crypto-intel-mcp":      "https://crypto-intel-mcp-production.up.railway.app/mcp",
+    "market-data-mcp":       "https://market-data-mcp-production.up.railway.app/mcp",
+    "email-verify-mcp":      "https://email-verify-mcp-production.up.railway.app/mcp",
+    "currency-intel-mcp":    "https://currency-intel-mcp-production.up.railway.app/mcp",
+}
+SISTER_SERVERS = {k: v for k, v in _FNET_ALL_SERVERS.items() if k != "gov-contracts-mcp"}

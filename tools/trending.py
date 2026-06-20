@@ -12,9 +12,10 @@ def register(mcp) -> None:
         agent_id: Optional[str] = None,
         payment_tx: Optional[str] = None,
     ) -> dict:
-        """Which sectors are seeing the most new federal solicitations right now.
-        Buckets the opportunities posted in the last `days` by NAICS sector and
-        ranks them by new-solicitation volume (with the agencies driving each).
+        """Analyze which sectors are seeing the most new U.S. federal government
+        solicitations right now — buckets SAM.gov opportunities posted in the last
+        `days` by NAICS code and ranks them by new-solicitation volume, with the
+        agencies driving each. Surfaces emerging federal procurement demand.
 
         PAID: $0.01 USDC per query after the daily free allowance. On a 402, pay
         the returned Solana memo and re-call with the SAME arguments plus

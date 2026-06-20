@@ -58,8 +58,13 @@ def is_active() -> bool:
     return bool(config.X402_ENABLED and config.PAYMENT_RECIPIENT)
 
 
-def _expected_base_units() -> int:
-    return round(config.QUERY_PRICE_USDC * (10 ** _USDC_DECIMALS))
+def _price_for(tool: str) -> float:
+    """Per-tool USDC price; falls back to the flat QUERY_PRICE_USDC."""
+    return getattr(config, "TOOL_PRICES", {}).get(tool, config.QUERY_PRICE_USDC)
+
+
+def _expected_base_units(price: float) -> int:
+    return round(price * (10 ** _USDC_DECIMALS))
 
 
 def _today() -> str:
@@ -76,24 +81,25 @@ def intent_id(tool: str, params: dict) -> str:
     return hashlib.sha256(canonical.encode("utf-8")).hexdigest()[:32]
 
 
-def payment_required_body(tool: str, intent: str, reason: Optional[str] = None) -> dict:
+def payment_required_body(tool: str, intent: str, price: float,
+                          reason: Optional[str] = None) -> dict:
     body = {
         "status": 402,
         "error": "payment_required",
         "payment_required": {
-            "amount": f"{config.QUERY_PRICE_USDC:.2f}",
+            "amount": f"{price:.2f}",
             "currency": "USDC",
             "network": "solana",
             "recipient": config.PAYMENT_RECIPIENT,
             "memo": intent,
             "expires_in": config.PAYMENT_EXPIRY_SECONDS,
             "usdc_mint": config.PAYMENT_USDC_MINT,
-            "amount_base_units": _expected_base_units(),
+            "amount_base_units": _expected_base_units(price),
             "decimals": _USDC_DECIMALS,
         },
         "instructions": (
             f"Daily free tier ({config.FREE_TIER_DAILY} queries) is spent. Send "
-            f"{config.QUERY_PRICE_USDC:.2f} USDC ({config.PAYMENT_USDC_MINT}) to "
+            f"{price:.2f} USDC ({config.PAYMENT_USDC_MINT}) to "
             f"{config.PAYMENT_RECIPIENT} on Solana with the SPL-memo set to "
             f"'{intent}', then call {tool} again with the SAME arguments plus "
             f"payment_tx=<transaction signature>."),
@@ -108,7 +114,7 @@ def _fail(code: str, detail: str) -> dict:
     return {"ok": False, "reason": code, "detail": detail}
 
 
-async def verify_payment(tx_signature: str, expected_memo: str) -> dict:
+async def verify_payment(tx_signature: str, expected_memo: str, price: float) -> dict:
     rpc = {
         "jsonrpc": "2.0", "id": 1, "method": "getTransaction",
         "params": [tx_signature, {
@@ -148,11 +154,11 @@ async def verify_payment(tx_signature: str, expected_memo: str) -> dict:
         return _fail("no_transfer",
                      f"No USDC transfer to the operations wallet "
                      f"{config.PAYMENT_RECIPIENT} found in this tx.")
-    need = _expected_base_units()
+    need = _expected_base_units(price)
     if delta < need:
         return _fail("underpaid",
                      f"Transferred {delta / 10**_USDC_DECIMALS:.6f} USDC; need at "
-                     f"least {config.QUERY_PRICE_USDC:.2f} USDC.")
+                     f"least {price:.2f} USDC.")
 
     memo = _extract_memo(result, meta)
     if not memo or expected_memo not in memo:
@@ -265,6 +271,10 @@ async def precheck(tool: str, params: dict, agent_key: str,
     if _has_api_key(api_key):
         return {"gate": "api_key"}
 
+    price = _price_for(tool)
+    if price <= 0:                      # explicitly-free tool (e.g. contract_detail)
+        return {"gate": "open"}
+
     claim = await _claim_free(agent_key)
     if claim.get("allowed"):
         return {"gate": "free", "count": claim.get("count"), "cap": claim.get("cap")}
@@ -273,18 +283,18 @@ async def precheck(tool: str, params: dict, agent_key: str,
     payment_tx = (payment_tx or "").strip()
     if not payment_tx:
         return {"gate": "blocked", "status": 402,
-                "body": payment_required_body(tool, intent)}
+                "body": payment_required_body(tool, intent, price)}
 
     if await _tx_used(payment_tx):
         return {"gate": "blocked", "status": 402,
                 "body": payment_required_body(
-                    tool, intent, reason="This payment_tx was already used. Make a "
-                                         "new payment.")}
+                    tool, intent, price, reason="This payment_tx was already used. Make a "
+                                                "new payment.")}
 
-    v = await verify_payment(payment_tx, intent)
+    v = await verify_payment(payment_tx, intent, price)
     if not v["ok"]:
         return {"gate": "blocked", "status": 402,
-                "body": payment_required_body(tool, intent, reason=v["detail"])}
+                "body": payment_required_body(tool, intent, price, reason=v["detail"])}
 
     row = {
         "tx_signature": payment_tx, "intent": intent, "agent_key": agent_key,
